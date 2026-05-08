@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sentence Typing Race</title>
 <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
-<!-- Firebase Compat SDKs -->
+<!-- Firebase Compat SDKs (Auth 추가) -->
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 <style>
 /* 라이트 테마(흰색 배경)용 색상 팔레트 - 모던 글래스모피즘 */
@@ -61,7 +62,7 @@ body::before{
 .scr.on{display:block; animation:screenIn 0.5s cubic-bezier(0.16,1,0.3,1) forwards;}
 @keyframes screenIn { from { opacity:0; transform:translateY(20px) scale(0.98); } to { opacity:1; transform:translateY(0) scale(1); } }
 
-/* FANCY CARDS (고급스러운 유리 질감 극대화) */
+/* FANCY CARDS */
 .card{
   background:var(--surface); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
   border:1px solid var(--border); border-radius:28px; padding:40px; margin-bottom:24px;
@@ -116,7 +117,7 @@ textarea{min-height:180px;resize:vertical;font-family:var(--mono);font-size:15px
 .bs:hover{background:#ffffff;border-color:rgba(0,0,0,0.15);transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,0.08);}
 .br{display:flex;gap:16px;margin-top:24px;flex-wrap:wrap;align-items:center;}
 
-/* MODE SELECT BUTTONS (높이 2/3 수준으로 축소됨) */
+/* MODE SELECT BUTTONS */
 .msel{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:20px;margin-bottom:40px;}
 .mbtn{
   background:rgba(255,255,255,0.6); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
@@ -302,6 +303,24 @@ textarea{min-height:180px;resize:vertical;font-family:var(--mono);font-size:15px
 .sub-filter-row label{font-size:16px;color:var(--text); font-weight:800;}
 .sub-filter-row select{width:auto;padding:14px 40px 14px 20px;font-size:16px; font-weight:800; min-width: 160px; border-radius:14px;}
 
+/* MY RANK BADGE (FANCY CARD) */
+.my-rank-fancy {
+  display: flex; align-items: center; gap: 24px;
+  background: linear-gradient(135deg, #eff6ff, #e0f2fe);
+  border: 2px solid rgba(14,165,233,0.2);
+  border-radius: 28px; padding: 32px 40px; margin-bottom: 36px;
+  box-shadow: 0 16px 40px rgba(14,165,233,0.15);
+}
+.my-rank-icon { font-size: 60px; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.1)); }
+.my-rank-details { display:flex; flex-direction:column; justify-content:center; }
+.mrd-label { font-size: 15px; color: var(--accent); font-weight: 800; letter-spacing: 2px; margin-bottom: 4px; }
+.mrd-pos { font-family: var(--mono); font-size: 56px; font-weight: 800; color: var(--accent); line-height:1; text-shadow:0 4px 12px rgba(14,165,233,0.2); }
+.my-rank-divider { width: 2px; height: 80px; background: rgba(14,165,233,0.2); margin: 0 16px; }
+.my-rank-score-info { display:flex; flex-direction:column; justify-content:center; }
+.msi-name { font-size: 22px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+.msi-score { font-family: var(--mono); font-size: 32px; font-weight: 800; color: var(--accent3); }
+.msi-total { font-size: 14px; color: var(--muted); font-weight: 700; margin-top: 6px; }
+
 /* RANK TABLE */
 .rank-table-wrap { overflow-x: auto; background: #ffffff; border-radius: 24px; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 10px 30px rgba(0,0,0,0.03); margin-top: 16px; max-height: 600px; overflow-y: auto;}
 .rank-table{width:100%; border-collapse:collapse; min-width:800px; text-align:center;}
@@ -355,6 +374,8 @@ textarea{min-height:180px;resize:vertical;font-family:var(--mono);font-size:15px
   .score-stats { grid-template-columns: 1fr 1fr; }
   .tinput{font-size:28px;} .sentence-display{font-size:24px;}
   .modal-content { padding: 24px; width:95%; }
+  .my-rank-fancy { flex-direction: column; text-align: center; gap:16px; padding:24px; }
+  .my-rank-divider { width:100%; height:2px; margin:8px 0; }
   .wrr { flex-direction: column; text-align: center; align-items: center; }
   .wrr-content { text-align: center; }
   .wt { margin-top: 10px; }
@@ -395,7 +416,7 @@ textarea{min-height:180px;resize:vertical;font-family:var(--mono);font-size:15px
 
 <script>
 // =========================================================
-// 🚀 [필수 설정] Firebase 프로젝트 설정값을 여기에 붙여넣으세요!
+// 🚀 [필수 설정] Firebase 프로젝트 설정값
 // =========================================================
 const firebaseConfig = {
     apiKey: "AIzaSyCer92ve-QWjTVKaoYbUJaoqqOTJJCz7yI",
@@ -410,6 +431,19 @@ const firebaseConfig = {
 // Firebase 초기화
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+const auth = firebase.auth(); // 권한 문제 해결을 위한 Auth 추가
+
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'sentence-typing-race';
+
+// 안전한 데이터 경로 생성 헬퍼
+function getSettingsRef() {
+    const sc = currentSchoolCode || 'default';
+    return db.collection('artifacts').doc(appId).collection('public').doc('data').collection('settings').doc(sc);
+}
+function getRankingsCol() {
+    const sc = currentSchoolCode || 'default';
+    return db.collection('artifacts').doc(appId).collection('public').doc('data').collection('rankings_' + sc);
+}
 
 // ── 전역 상태 ──
 let currentSchoolCode = '';
@@ -421,11 +455,22 @@ let rankData=[], rankTab='team', rankLesson='', lastScore=null;
 let typedChars = 0; 
 let teacherRecords = []; 
 let isProcessing = false; 
-let myPreviousBest = 0; // 내 최고기록 저장용
+let myPreviousBest = 0; 
 const K_PW = 'str_pw'; 
 
 // ── 라우팅 및 초기화 (SaaS) ──
-window.addEventListener('DOMContentLoaded', () => {
+async function initApp() {
+  // Firebase 익명 로그인 (권한 오류 방지)
+  try {
+    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+      await auth.signInWithCustomToken(__initial_auth_token);
+    } else {
+      await auth.signInAnonymously();
+    }
+  } catch(e) {
+    console.warn("Auth warning:", e);
+  }
+
   const params = new URLSearchParams(window.location.search);
   const sc = params.get('school');
   if(sc) {
@@ -436,7 +481,9 @@ window.addEventListener('DOMContentLoaded', () => {
   } else {
     goto('s-intro');
   }
-});
+}
+
+window.addEventListener('DOMContentLoaded', initApp);
 
 function enterSchool() {
   const code = document.getElementById('school-code-input').value.trim().toLowerCase();
@@ -447,10 +494,10 @@ function enterSchool() {
 
 // DB 로드
 async function fetchFirebaseData() {
+  if(!auth.currentUser) return; // 인증 가드
   try {
     document.getElementById('school-nm').innerHTML = '<span class="spinner"></span> 데이터 로딩 중...';
-    const docRef = db.collection("settings").doc(currentSchoolCode);
-    const docSnap = await docRef.get();
+    const docSnap = await getSettingsRef().get();
     if (docSnap.exists) {
       const data = docSnap.data();
       document.getElementById('school-nm').textContent = data.schoolName || currentSchoolCode.toUpperCase();
@@ -464,7 +511,7 @@ async function fetchFirebaseData() {
     goto('s-mode');
   } catch(e) {
     console.log("Firebase 데이터를 불러오는데 실패했습니다.", e);
-    document.getElementById('school-nm').textContent = "연결 오류";
+    document.getElementById('school-nm').textContent = "데이터를 불러올 수 없습니다.";
   }
 }
 </script>
@@ -955,7 +1002,9 @@ async function doLogin(){
   const pw=document.getElementById('tpw').value;
   if(pw === '초기화' || pw.toUpperCase() === 'RESET'){ 
     teacherPwDB = '1234';
-    await db.collection("settings").doc(currentSchoolCode).set({ teacherPassword: '1234' }, { merge: true });
+    if(auth.currentUser) {
+      await getSettingsRef().set({ teacherPassword: '1234' }, { merge: true });
+    }
     alert('비밀번호가 1234로 초기화되었습니다.'); 
     document.getElementById('tpw').value=''; 
     return; 
@@ -970,7 +1019,9 @@ async function doLogin(){
 async function resetPassword(){
   if(confirm('초기 상태(1234)로 초기화할까요?')){ 
     teacherPwDB = '1234';
-    await db.collection("settings").doc(currentSchoolCode).set({ teacherPassword: '1234' }, { merge: true });
+    if(auth.currentUser) {
+      await getSettingsRef().set({ teacherPassword: '1234' }, { merge: true });
+    }
     alert('비밀번호 초기화 완료 (1234)'); 
     document.getElementById('tpw').value=''; 
   }
@@ -979,7 +1030,8 @@ async function changePw(){
   const p1=document.getElementById('npw1').value, p2=document.getElementById('npw2').value;
   if(!p1 || p1!==p2){ alert('비밀번호를 정확히 입력하세요.'); return; }
   teacherPwDB = p1;
-  await db.collection("settings").doc(currentSchoolCode).set({ teacherPassword: p1 }, { merge: true });
+  if(!auth.currentUser) return alert('권한이 없어 저장할 수 없습니다.');
+  await getSettingsRef().set({ teacherPassword: p1 }, { merge: true });
   document.getElementById('npw1').value=''; document.getElementById('npw2').value=''; 
   alert('비밀번호 변경이 클라우드에 적용되었습니다.');
 }
@@ -1061,11 +1113,12 @@ function loadSample(){
 }
 
 async function saveToFirebase(){
+  if(!auth.currentUser) return alert("데이터를 저장할 권한이 없습니다.");
   const schoolName = document.getElementById('school-input').value.trim();
   const btn = document.getElementById('btn-save-firebase');
   btn.textContent = "⏳ 클라우드에 기록 중..."; btn.disabled = true;
   try {
-    await db.collection("settings").doc(currentSchoolCode).set({ 
+    await getSettingsRef().set({ 
       schoolName: schoolName, 
       lessons: lessons,
       teacherPassword: teacherPwDB
@@ -1093,21 +1146,21 @@ function toggleDeleteInputs() {
 }
 
 async function executeDeleteRanking() {
+  if(!auth.currentUser) return alert("권한이 없습니다.");
+  
   const type = document.getElementById('del-type').value;
-  let query = db.collection("rankings_" + currentSchoolCode);
   let confirmMsg = "";
   
+  const g = Number(document.getElementById('del-grade').value);
+  const l = document.getElementById('del-lesson-select').value;
+
   if(type === 'all') {
     confirmMsg = "정말로 우리 학교의 [모든 랭킹 데이터]를 삭제하시겠습니까?\n이 작업은 절대 되돌릴 수 없습니다!";
   } else if(type === 'grade') {
-    const g = Number(document.getElementById('del-grade').value);
     if(!g) return alert("삭제할 학년을 입력하세요.");
-    query = query.where("grade", "==", g);
     confirmMsg = `정말로 [${g}학년]의 모든 랭킹 데이터를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`;
   } else if(type === 'lesson') {
-    const l = document.getElementById('del-lesson-select').value;
     if(!l) return alert("삭제할 단원을 선택하세요.");
-    query = query.where("lesson", "==", l);
     confirmMsg = `정말로 [단원 ${l}]의 모든 랭킹 데이터를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`;
   }
 
@@ -1119,18 +1172,29 @@ async function executeDeleteRanking() {
   }
 
   try {
-    const snapshot = await query.get();
-    if(snapshot.empty) {
-      return alert("해당 조건에 맞는 데이터가 존재하지 않습니다.");
-    }
+    const snapshot = await getRankingsCol().get();
+    if(snapshot.empty) return alert("해당 조건에 맞는 데이터가 존재하지 않습니다.");
     
     const batch = db.batch();
+    let delCount = 0;
+    
     snapshot.docs.forEach(doc => {
-      batch.delete(doc.ref);
+      const data = doc.data();
+      let shouldDelete = false;
+      if (type === 'all') shouldDelete = true;
+      else if (type === 'grade' && data.grade === g) shouldDelete = true;
+      else if (type === 'lesson' && data.lesson === l) shouldDelete = true;
+
+      if(shouldDelete) {
+        batch.delete(doc.ref);
+        delCount++;
+      }
     });
     
+    if(delCount === 0) return alert("조건에 맞는 데이터가 없습니다.");
+    
     await batch.commit();
-    alert(`성공적으로 ${snapshot.size}개의 데이터를 삭제했습니다.`);
+    alert(`성공적으로 ${delCount}개의 데이터를 삭제했습니다.`);
     initTeacherRecords(); 
   } catch(error) {
     alert("데이터 삭제 중 오류가 발생했습니다: " + error.message);
@@ -1139,12 +1203,13 @@ async function executeDeleteRanking() {
 
 // ── 교사용 기록표 & 데이터 초기화 ──
 async function initTeacherRecords() {
+  if(!auth.currentUser) return alert("권한이 없습니다.");
   goto('s-teacher-records');
   const tbody = document.getElementById('rec-tbody');
   tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 60px;"><span class="spinner"></span> 데이터를 불러오는 중...</td></tr>';
   
   try {
-    const snapshot = await db.collection("rankings_" + currentSchoolCode).get();
+    const snapshot = await getRankingsCol().get();
     teacherRecords = [];
     snapshot.forEach(doc => {
       let data = doc.data();
@@ -1354,19 +1419,19 @@ function buildHiddenChars(sentence, diffLevel) {
 // ── 개인 PB (최고기록) 가져오기 ──
 async function fetchMyPB() {
   myPreviousBest = 0;
+  if(!auth.currentUser) return;
   try {
-    const snap = await db.collection("rankings_" + currentSchoolCode)
-      .where("grade", "==", Number(player.grade))
-      .where("class", "==", Number(player.class))
-      .where("number", "==", Number(player.number))
-      .where("name", "==", player.name)
-      .where("lesson", "==", selLesson.code)
-      .get();
-      
+    const snap = await getRankingsCol().get();
     snap.forEach(doc => {
-      // 기존 score 필드 또는 새로운 points 필드를 모두 고려
-      const pastScore = safeNum(doc.data().points) || safeNum(doc.data().score) || 0;
-      if (pastScore > myPreviousBest) myPreviousBest = pastScore;
+      const data = doc.data();
+      if (data.grade === Number(player.grade) &&
+          data.class === Number(player.class) &&
+          data.number === Number(player.number) &&
+          data.name === player.name &&
+          data.lesson === selLesson.code) {
+         const pastScore = safeNum(data.points) || safeNum(data.score) || 0;
+         if (pastScore > myPreviousBest) myPreviousBest = pastScore;
+      }
     });
   } catch(e) { console.log('PB fetch error', e); }
 }
@@ -1586,9 +1651,10 @@ async function endGame(){
   goto('s-result');
 
   try {
+    if(!auth.currentUser) throw new Error("인증 권한이 없습니다.");
     const detailData = results.map(r => ({ sentence: r.sentence, typed: r.typed, correct: r.correct }));
 
-    await db.collection("rankings_" + currentSchoolCode).add({
+    await getRankingsCol().add({
       date: new Date().toLocaleString('ko-KR'),
       timestamp: Date.now(), 
       grade: Number(player.grade), class: Number(player.class), number: Number(player.number), name: player.name,
@@ -1638,10 +1704,11 @@ function setRankTab(t){
 }
 
 async function loadRankData(){
+  if(!auth.currentUser) return;
   const body = document.getElementById('rank-body');
   body.innerHTML='<tr><td colspan="4"><div class="rank-loading"><span class="spinner"></span>데이터를 불러오는 중...</div></td></tr>';
   try {
-    const snapshot = await db.collection("rankings_" + currentSchoolCode).get();
+    const snapshot = await getRankingsCol().get();
     rankData = [];
     snapshot.forEach(doc => rankData.push(doc.data()));
     
@@ -1692,10 +1759,9 @@ function renderRankTable(){
     rows.forEach(r => {
       const key = `${r.grade}학년 ${r.class}반`;
       if(!teamStats[key]) teamStats[key] = { name: key, totalPoints: 0, participants: new Set() };
-      // 개인 최고기록 갱신 등 모든 포인트가 포함된 값을 합산하여 팀 점수에 기여!
       const finalPoints = safeNum(r.points) || safeNum(r.score) || (safeNum(r.cpm) * (r.diff || 1));
       teamStats[key].totalPoints += finalPoints;
-      teamStats[key].participants.add(r.number + r.name); // 고유 학생 참여자 수
+      teamStats[key].participants.add(r.number + r.name);
     });
     
     const rankedTeams = Object.values(teamStats).sort((a,b) => b.totalPoints - a.totalPoints);

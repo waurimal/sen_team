@@ -420,12 +420,10 @@ const auth = firebase.auth();
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'sentence-typing-race';
 
-// 외부 호스팅(github.io) 호환용 인증 가드
-function isAuthValid() {
-  if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-    return !!auth.currentUser;
-  }
-  return true; 
+// 외부 호스팅(github.io 등) 지원을 위해 인증 체크 로직 제거 및 캔버스 룰만 적용
+function checkCanvasAuthRule() {
+  if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token && !auth.currentUser) return false;
+  return true;
 }
 
 function getSettingsRef() {
@@ -456,7 +454,7 @@ async function initApp() {
       await auth.signInAnonymously();
     }
   } catch(e) {
-    console.warn("Auth warning:", e);
+    console.warn("Auth initialization failed. Proceeding without auth (External Hosting Fallback)", e);
   }
 
   const params = new URLSearchParams(window.location.search);
@@ -499,7 +497,7 @@ function changeSchool() {
 }
 
 async function fetchFirebaseData() {
-  if(!isAuthValid()) return alert("인증 대기 중입니다. 잠시 후 다시 시도해주세요.");
+  if (!checkCanvasAuthRule()) return;
   try {
     document.getElementById('school-nm').innerHTML = '<span class="spinner"></span> 데이터 로딩 중...';
     const docSnap = await getSettingsRef().get();
@@ -516,7 +514,7 @@ async function fetchFirebaseData() {
     goto('s-mode');
   } catch(e) {
     console.log("Firebase 데이터를 불러오는데 실패했습니다.", e);
-    document.getElementById('school-nm').textContent = "데이터를 불러올 수 없습니다.";
+    document.getElementById('school-nm').textContent = "데이터베이스 연결 오류 (권한 또는 규칙을 확인하세요)";
   }
 }
 </script>
@@ -1000,9 +998,9 @@ async function doLogin(){
   const pw=document.getElementById('tpw').value;
   if(pw === '초기화' || pw.toUpperCase() === 'RESET'){ 
     teacherPwDB = '1234';
-    if(isAuthValid()) {
-      await getSettingsRef().set({ teacherPassword: '1234' }, { merge: true });
-    }
+    try {
+      if(checkCanvasAuthRule()) await getSettingsRef().set({ teacherPassword: '1234' }, { merge: true });
+    } catch(e) {}
     alert('비밀번호가 1234로 초기화되었습니다.'); 
     document.getElementById('tpw').value=''; 
     return; 
@@ -1017,9 +1015,9 @@ async function doLogin(){
 async function resetPassword(){
   if(confirm('초기 상태(1234)로 초기화할까요?')){ 
     teacherPwDB = '1234';
-    if(isAuthValid()) {
-      await getSettingsRef().set({ teacherPassword: '1234' }, { merge: true });
-    }
+    try {
+      if(checkCanvasAuthRule()) await getSettingsRef().set({ teacherPassword: '1234' }, { merge: true });
+    } catch(e) {}
     alert('비밀번호 초기화 완료 (1234)'); 
     document.getElementById('tpw').value=''; 
   }
@@ -1028,10 +1026,14 @@ async function changePw(){
   const p1=document.getElementById('npw1').value, p2=document.getElementById('npw2').value;
   if(!p1 || p1!==p2){ alert('비밀번호를 정확히 입력하세요.'); return; }
   teacherPwDB = p1;
-  if(!isAuthValid()) return alert('권한이 없어 저장할 수 없습니다.');
-  await getSettingsRef().set({ teacherPassword: p1 }, { merge: true });
-  document.getElementById('npw1').value=''; document.getElementById('npw2').value=''; 
-  alert('비밀번호 변경이 클라우드에 적용되었습니다.');
+  if(!checkCanvasAuthRule()) return alert('권한이 없어 저장할 수 없습니다.');
+  try {
+    await getSettingsRef().set({ teacherPassword: p1 }, { merge: true });
+    document.getElementById('npw1').value=''; document.getElementById('npw2').value=''; 
+    alert('비밀번호 변경이 클라우드에 적용되었습니다.');
+  } catch(e) {
+    alert('저장 실패: ' + e.message);
+  }
 }
 
 function renderLessonList(){
@@ -1111,7 +1113,7 @@ function loadSample(){
 }
 
 async function saveToFirebase(){
-  if(!isAuthValid()) return alert("데이터를 저장할 권한이 없습니다.");
+  if(!checkCanvasAuthRule()) return alert("데이터를 저장할 권한이 없습니다.");
   const schoolName = document.getElementById('school-input').value.trim();
   const btn = document.getElementById('btn-save-firebase');
   btn.textContent = "⏳ 클라우드에 기록 중..."; btn.disabled = true;
@@ -1144,7 +1146,7 @@ function toggleDeleteInputs() {
 }
 
 async function executeDeleteRanking() {
-  if(!isAuthValid()) return alert("권한이 없습니다.");
+  if(!checkCanvasAuthRule()) return alert("권한이 없습니다.");
   
   const type = document.getElementById('del-type').value;
   let confirmMsg = "";
@@ -1201,7 +1203,7 @@ async function executeDeleteRanking() {
 
 // ── 교사용 기록표 & 데이터 초기화 ──
 async function initTeacherRecords() {
-  if(!isAuthValid()) return alert("권한이 없습니다.");
+  if(!checkCanvasAuthRule()) return alert("권한이 없습니다.");
   goto('s-teacher-records');
   const tbody = document.getElementById('rec-tbody');
   tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 60px;"><span class="spinner"></span> 데이터를 불러오는 중...</td></tr>';
@@ -1416,7 +1418,7 @@ function buildHiddenChars(sentence, diffLevel) {
 // ── 개인 PB (최고기록) 가져오기 ──
 async function fetchMyPB() {
   myPreviousBest = 0;
-  if(!isAuthValid()) return;
+  if(!checkCanvasAuthRule()) return;
   try {
     const snap = await getRankingsCol().get();
     snap.forEach(doc => {
@@ -1648,7 +1650,7 @@ async function endGame(){
   goto('s-result');
 
   try {
-    if(!isAuthValid()) throw new Error("인증 권한이 없습니다.");
+    if(!checkCanvasAuthRule()) throw new Error("인증 권한이 없습니다.");
     const detailData = results.map(r => ({ sentence: r.sentence, typed: r.typed, correct: r.correct }));
 
     await getRankingsCol().add({
@@ -1661,7 +1663,7 @@ async function endGame(){
     });
     el.innerHTML='<div class="ss ok" style="text-align:center;">✓ Firebase 서버 랭킹 등록 완료! 팀에 기여했습니다!</div>';
   } catch(e) {
-    el.innerHTML=`<div class="ss err" style="text-align:center;">✗ 랭킹 저장 실패: ${e.message}</div>`;
+    el.innerHTML=`<div class="ss err" style="text-align:center;">✗ 랭킹 저장 실패: Firebase 설정(규칙)을 확인해주세요.</div>`;
   }
 }
 
@@ -1701,7 +1703,7 @@ function setRankTab(t){
 }
 
 async function loadRankData(){
-  if(!isAuthValid()) return;
+  if(!checkCanvasAuthRule()) return;
   const body = document.getElementById('rank-body');
   body.innerHTML='<tr><td colspan="4"><div class="rank-loading"><span class="spinner"></span>데이터를 불러오는 중...</div></td></tr>';
   try {

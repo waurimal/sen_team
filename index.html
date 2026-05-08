@@ -187,7 +187,7 @@ textarea{min-height:180px;resize:vertical;font-family:var(--mono);font-size:15px
 .qcnt{font-family:var(--mono);font-size:18px;color:var(--accent3);letter-spacing:2px;margin-bottom:16px; font-weight:800;}
 .qmean{font-size:36px;font-weight:800;color:var(--text);margin-bottom:24px;line-height:1.4; text-shadow:0 4px 12px rgba(0,0,0,0.05);}
 
-/* SENTENCE DISPLAY */
+/* SENTENCE DISPLAY (문장 하이라이트 & 블라인드) */
 .sentence-display {
   font-family: var(--mono); font-size: 32px; font-weight: 800; color: var(--muted);
   background: rgba(0,0,0,0.03); padding: 24px 32px; border-radius: 20px; border: 1px solid rgba(0,0,0,0.05);
@@ -207,7 +207,7 @@ textarea{min-height:180px;resize:vertical;font-family:var(--mono);font-size:15px
 .tinput.cor{border-color:var(--success);box-shadow:0 0 0 6px rgba(16,185,129,.2);color:var(--success); background:rgba(16,185,129,0.03);}
 .tinput.wrg{border-color:var(--accent2);box-shadow:0 0 0 6px rgba(225,29,72,.2);color:var(--accent2); animation:shake .3s; background:rgba(225,29,72,0.03);}
 
-/* ===== FANCY RESULT DASHBOARD ===== */
+/* ===== FANCY RESULT DASHBOARD (보완 전략 반영) ===== */
 .result-dashboard { display:flex; flex-direction:column; gap:24px; margin-bottom:24px; }
 .score-hero {
   background: linear-gradient(135deg, var(--accent), var(--accent3));
@@ -420,6 +420,14 @@ const auth = firebase.auth();
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'sentence-typing-race';
 
+// 외부 호스팅(github.io) 호환용 인증 가드
+function isAuthValid() {
+  if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+    return !!auth.currentUser;
+  }
+  return true; 
+}
+
 function getSettingsRef() {
     const sc = currentSchoolCode || 'default';
     return db.collection('artifacts').doc(appId).collection('public').doc('data').collection('settings').doc(sc);
@@ -491,7 +499,7 @@ function changeSchool() {
 }
 
 async function fetchFirebaseData() {
-  if(!auth.currentUser) return alert("인증 대기 중입니다. 잠시 후 다시 시도해주세요.");
+  if(!isAuthValid()) return alert("인증 대기 중입니다. 잠시 후 다시 시도해주세요.");
   try {
     document.getElementById('school-nm').innerHTML = '<span class="spinner"></span> 데이터 로딩 중...';
     const docSnap = await getSettingsRef().get();
@@ -992,7 +1000,7 @@ async function doLogin(){
   const pw=document.getElementById('tpw').value;
   if(pw === '초기화' || pw.toUpperCase() === 'RESET'){ 
     teacherPwDB = '1234';
-    if(auth.currentUser) {
+    if(isAuthValid()) {
       await getSettingsRef().set({ teacherPassword: '1234' }, { merge: true });
     }
     alert('비밀번호가 1234로 초기화되었습니다.'); 
@@ -1009,7 +1017,7 @@ async function doLogin(){
 async function resetPassword(){
   if(confirm('초기 상태(1234)로 초기화할까요?')){ 
     teacherPwDB = '1234';
-    if(auth.currentUser) {
+    if(isAuthValid()) {
       await getSettingsRef().set({ teacherPassword: '1234' }, { merge: true });
     }
     alert('비밀번호 초기화 완료 (1234)'); 
@@ -1020,7 +1028,7 @@ async function changePw(){
   const p1=document.getElementById('npw1').value, p2=document.getElementById('npw2').value;
   if(!p1 || p1!==p2){ alert('비밀번호를 정확히 입력하세요.'); return; }
   teacherPwDB = p1;
-  if(!auth.currentUser) return alert('권한이 없어 저장할 수 없습니다.');
+  if(!isAuthValid()) return alert('권한이 없어 저장할 수 없습니다.');
   await getSettingsRef().set({ teacherPassword: p1 }, { merge: true });
   document.getElementById('npw1').value=''; document.getElementById('npw2').value=''; 
   alert('비밀번호 변경이 클라우드에 적용되었습니다.');
@@ -1103,7 +1111,7 @@ function loadSample(){
 }
 
 async function saveToFirebase(){
-  if(!auth.currentUser) return alert("데이터를 저장할 권한이 없습니다.");
+  if(!isAuthValid()) return alert("데이터를 저장할 권한이 없습니다.");
   const schoolName = document.getElementById('school-input').value.trim();
   const btn = document.getElementById('btn-save-firebase');
   btn.textContent = "⏳ 클라우드에 기록 중..."; btn.disabled = true;
@@ -1136,7 +1144,7 @@ function toggleDeleteInputs() {
 }
 
 async function executeDeleteRanking() {
-  if(!auth.currentUser) return alert("권한이 없습니다.");
+  if(!isAuthValid()) return alert("권한이 없습니다.");
   
   const type = document.getElementById('del-type').value;
   let confirmMsg = "";
@@ -1193,7 +1201,7 @@ async function executeDeleteRanking() {
 
 // ── 교사용 기록표 & 데이터 초기화 ──
 async function initTeacherRecords() {
-  if(!auth.currentUser) return alert("권한이 없습니다.");
+  if(!isAuthValid()) return alert("권한이 없습니다.");
   goto('s-teacher-records');
   const tbody = document.getElementById('rec-tbody');
   tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 60px;"><span class="spinner"></span> 데이터를 불러오는 중...</td></tr>';
@@ -1408,7 +1416,7 @@ function buildHiddenChars(sentence, diffLevel) {
 // ── 개인 PB (최고기록) 가져오기 ──
 async function fetchMyPB() {
   myPreviousBest = 0;
-  if(!auth.currentUser) return;
+  if(!isAuthValid()) return;
   try {
     const snap = await getRankingsCol().get();
     snap.forEach(doc => {
@@ -1640,7 +1648,7 @@ async function endGame(){
   goto('s-result');
 
   try {
-    if(!auth.currentUser) throw new Error("인증 권한이 없습니다.");
+    if(!isAuthValid()) throw new Error("인증 권한이 없습니다.");
     const detailData = results.map(r => ({ sentence: r.sentence, typed: r.typed, correct: r.correct }));
 
     await getRankingsCol().add({
@@ -1693,7 +1701,7 @@ function setRankTab(t){
 }
 
 async function loadRankData(){
-  if(!auth.currentUser) return;
+  if(!isAuthValid()) return;
   const body = document.getElementById('rank-body');
   body.innerHTML='<tr><td colspan="4"><div class="rank-loading"><span class="spinner"></span>데이터를 불러오는 중...</div></td></tr>';
   try {

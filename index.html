@@ -42,7 +42,7 @@ body::before{
 .wrap{width:100%;max-width:960px;position:relative;z-index:1;}
 
 /* HEADER */
-.hdr{text-align:center;padding:40px 0 40px;}
+.hdr{text-align:center;padding:40px 0 20px;}
 .hdr h1{
   font-family:var(--mono);font-size:clamp(30px, 6vw, 60px);letter-spacing:4px;
   text-transform:uppercase; filter: drop-shadow(0 4px 16px var(--accent-glow));
@@ -54,7 +54,7 @@ body::before{
 }
 .school-nm{font-size:clamp(20px, 4vw, 30px);color:var(--accent3);font-weight:800;margin-top:20px;letter-spacing:3px;min-height:34px; text-shadow:0 4px 12px var(--accent3-glow);}
 .hdr-sub{font-size:clamp(16px, 3vw, 25px);color:var(--muted);margin-top:12px;letter-spacing:2px;transition:color .3s; font-weight:700;}
-.school-badge-wrap { display:none; justify-content:center; margin-top:16px; }
+.school-badge-wrap { display:none; justify-content:center; margin-top:16px; margin-bottom:20px; }
 .school-badge { background:var(--accent-glow); color:var(--accent); padding:6px 16px; border-radius:99px; font-family:var(--mono); font-weight:800; font-size:15px; border:1px solid rgba(14,165,233,0.3); }
 
 /* SCREENS & TRANSITIONS */
@@ -62,7 +62,7 @@ body::before{
 .scr.on{display:block; animation:screenIn 0.5s cubic-bezier(0.16,1,0.3,1) forwards;}
 @keyframes screenIn { from { opacity:0; transform:translateY(20px) scale(0.98); } to { opacity:1; transform:translateY(0) scale(1); } }
 
-/* FANCY CARDS */
+/* FANCY CARDS (고급스러운 유리 질감 극대화) */
 .card{
   background:var(--surface); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
   border:1px solid var(--border); border-radius:28px; padding:40px; margin-bottom:24px;
@@ -117,7 +117,7 @@ textarea{min-height:180px;resize:vertical;font-family:var(--mono);font-size:15px
 .bs:hover{background:#ffffff;border-color:rgba(0,0,0,0.15);transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,0.08);}
 .br{display:flex;gap:16px;margin-top:24px;flex-wrap:wrap;align-items:center;}
 
-/* MODE SELECT BUTTONS */
+/* MODE SELECT BUTTONS (높이 2/3 수준으로 축소됨) */
 .msel{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:20px;margin-bottom:40px;}
 .mbtn{
   background:rgba(255,255,255,0.6); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
@@ -127,6 +127,8 @@ textarea{min-height:180px;resize:vertical;font-family:var(--mono);font-size:15px
   box-shadow:0 12px 30px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,1);
 }
 .mbtn:hover{transform:translateY(-10px) scale(1.02); background:rgba(255,255,255,1); box-shadow:0 24px 50px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,1);}
+.mbtn.sb:hover{border-color:rgba(14,165,233,0.3);box-shadow:0 24px 50px rgba(14,165,233,.15), inset 0 1px 0 rgba(255,255,255,1);}
+.mbtn.rb:hover{border-color:rgba(139,92,246,0.3);box-shadow:0 24px 50px rgba(139,92,246,.15), inset 0 1px 0 rgba(255,255,255,1);}
 .mico{font-size:64px; filter:drop-shadow(0 8px 16px rgba(0,0,0,0.1)); transition:transform .4s cubic-bezier(0.16,1,0.3,1);}
 .mbtn:hover .mico{transform:scale(1.2) translateY(-5px);}
 .mlbl{font-family:var(--mono);font-size:24px;letter-spacing:2px;font-weight:800;margin-top:6px;}
@@ -185,7 +187,7 @@ textarea{min-height:180px;resize:vertical;font-family:var(--mono);font-size:15px
 .qcnt{font-family:var(--mono);font-size:18px;color:var(--accent3);letter-spacing:2px;margin-bottom:16px; font-weight:800;}
 .qmean{font-size:36px;font-weight:800;color:var(--text);margin-bottom:24px;line-height:1.4; text-shadow:0 4px 12px rgba(0,0,0,0.05);}
 
-/* SENTENCE DISPLAY (문장 하이라이트 & 블라인드) */
+/* SENTENCE DISPLAY */
 .sentence-display {
   font-family: var(--mono); font-size: 32px; font-weight: 800; color: var(--muted);
   background: rgba(0,0,0,0.03); padding: 24px 32px; border-radius: 20px; border: 1px solid rgba(0,0,0,0.05);
@@ -205,7 +207,7 @@ textarea{min-height:180px;resize:vertical;font-family:var(--mono);font-size:15px
 .tinput.cor{border-color:var(--success);box-shadow:0 0 0 6px rgba(16,185,129,.2);color:var(--success); background:rgba(16,185,129,0.03);}
 .tinput.wrg{border-color:var(--accent2);box-shadow:0 0 0 6px rgba(225,29,72,.2);color:var(--accent2); animation:shake .3s; background:rgba(225,29,72,0.03);}
 
-/* ===== FANCY RESULT DASHBOARD (보완 전략 반영) ===== */
+/* ===== FANCY RESULT DASHBOARD ===== */
 .result-dashboard { display:flex; flex-direction:column; gap:24px; margin-bottom:24px; }
 .score-hero {
   background: linear-gradient(135deg, var(--accent), var(--accent3));
@@ -385,22 +387,6 @@ textarea{min-height:180px;resize:vertical;font-family:var(--mono);font-size:15px
 </head>
 <body>
 
-<!-- 처음 접속 시 학교 코드 확인/입력 화면 -->
-<div class="scr" id="s-intro">
-  <div class="card tc" style="max-width:500px; margin:0 auto; margin-top:10vh;">
-    <div class="ct t" style="justify-content:center; font-size:24px; color:var(--accent);">🏫 학교 코드 입력</div>
-    <div class="fg">
-      <input type="text" id="school-code-input" placeholder="코드를 입력하세요 (예: eui)" style="text-align:center; font-weight:800; font-family:var(--mono); text-transform:lowercase; font-size:24px;" onkeydown="if(event.key==='Enter')enterSchool()"/>
-    </div>
-    <button class="btn bp" style="width:100%; margin-top:10px; font-size:18px;" onclick="enterSchool()">🚀 입장하기</button>
-    <div style="background:rgba(245,158,11,0.05); border:1px solid rgba(245,158,11,0.2); border-radius:16px; padding:20px; margin-top:24px; text-align:left;">
-      <h4 style="color:var(--teacher); margin-bottom:8px; font-size:15px; font-weight:800;">👨‍🏫 선생님이신가요?</h4>
-      <p style="color:var(--muted); font-size:14px; line-height:1.6; margin:0;">원하는 코드를 직접 입력하고 입장하시면, 해당 코드로 <strong>우리 학교만의 독립된 공간</strong>이 즉시 생성됩니다!</p>
-    </div>
-  </div>
-</div>
-
-<!-- 학생 상세 기록 모달 (위치 최상단 고정) -->
 <div id="detail-modal">
   <div class="modal-content">
     <div class="modal-header">
@@ -428,14 +414,12 @@ const firebaseConfig = {
     measurementId: "G-98XC1DFR0M"
 };
 
-// Firebase 초기화
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-const auth = firebase.auth(); // 권한 문제 해결을 위한 Auth 추가
+const auth = firebase.auth(); 
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'sentence-typing-race';
 
-// 안전한 데이터 경로 생성 헬퍼
 function getSettingsRef() {
     const sc = currentSchoolCode || 'default';
     return db.collection('artifacts').doc(appId).collection('public').doc('data').collection('settings').doc(sc);
@@ -445,10 +429,8 @@ function getRankingsCol() {
     return db.collection('artifacts').doc(appId).collection('public').doc('data').collection('rankings_' + sc);
 }
 
-// ── 전역 상태 ──
 let currentSchoolCode = '';
 let teacherPwDB = '1234';
-
 let lessons=[], editIdx=-1, selLesson=null, sentences=[], player={}, queue=[], current=0, results=[];
 let qStart=0, totalStart=0, timer=null;
 let rankData=[], rankTab='team', rankLesson='', lastScore=null;
@@ -458,9 +440,7 @@ let isProcessing = false;
 let myPreviousBest = 0; 
 const K_PW = 'str_pw'; 
 
-// ── 라우팅 및 초기화 (SaaS) ──
 async function initApp() {
-  // Firebase 익명 로그인 (권한 오류 방지)
   try {
     if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
       await auth.signInWithCustomToken(__initial_auth_token);
@@ -489,12 +469,29 @@ function enterSchool() {
   const code = document.getElementById('school-code-input').value.trim().toLowerCase();
   if(!code) return alert("학교 코드를 입력해주세요.");
   if(/[^a-z0-9-_]/.test(code)) return alert("학교 코드는 영문, 숫자, 하이픈(-), 언더스코어(_)만 가능합니다.");
-  location.href = "?school=" + code;
+  
+  currentSchoolCode = code;
+  document.getElementById('sc-display').textContent = currentSchoolCode;
+  document.getElementById('school-badge-wrap').style.display = 'flex';
+  
+  try {
+    window.history.pushState({}, '', '?school=' + code);
+  } catch(e) {}
+  
+  fetchFirebaseData();
 }
 
-// DB 로드
+function changeSchool() {
+  currentSchoolCode = '';
+  document.getElementById('school-badge-wrap').style.display = 'none';
+  document.getElementById('school-nm').textContent = '';
+  document.getElementById('school-code-input').value = '';
+  try { window.history.pushState({}, '', window.location.pathname); } catch(e) {}
+  goto('s-intro');
+}
+
 async function fetchFirebaseData() {
-  if(!auth.currentUser) return; // 인증 가드
+  if(!auth.currentUser) return alert("인증 대기 중입니다. 잠시 후 다시 시도해주세요.");
   try {
     document.getElementById('school-nm').innerHTML = '<span class="spinner"></span> 데이터 로딩 중...';
     const docSnap = await getSettingsRef().get();
@@ -517,8 +514,6 @@ async function fetchFirebaseData() {
 </script>
 
 <div class="wrap">
-
-<!-- 헤더 -->
 <div class="hdr">
   <h1>
     <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2" ry="2"/><path d="M6 8h.01"/><path d="M10 8h.01"/><path d="M14 8h.01"/><path d="M18 8h.01"/><path d="M6 12h.01"/><path d="M10 12h.01"/><path d="M14 12h.01"/><path d="M18 12h.01"/><path d="M7 16h10"/></svg>
@@ -531,7 +526,20 @@ async function fetchFirebaseData() {
   </div>
 </div>
 
-<!-- ① 모드 선택 -->
+<div class="scr" id="s-intro">
+  <div class="card tc" style="max-width:500px; margin:40px auto 0;">
+    <div class="ct t" style="justify-content:center; font-size:24px; color:var(--accent);">🏫 학교/학급 코드 입력</div>
+    <div class="fg">
+      <input type="text" id="school-code-input" placeholder="코드를 입력하세요 (예: eui)" style="text-align:center; font-weight:800; font-family:var(--mono); text-transform:lowercase; font-size:24px;" onkeydown="if(event.key==='Enter')enterSchool()"/>
+    </div>
+    <button class="btn bp" style="width:100%; margin-top:10px; font-size:18px;" onclick="enterSchool()">🚀 입장하기</button>
+    <div style="background:rgba(245,158,11,0.05); border:1px solid rgba(245,158,11,0.2); border-radius:16px; padding:20px; margin-top:24px; text-align:left;">
+      <h4 style="color:var(--teacher); margin-bottom:8px; font-size:15px; font-weight:800;">👨‍🏫 선생님이신가요?</h4>
+      <p style="color:var(--muted); font-size:14px; line-height:1.6; margin:0;">원하는 영문/숫자 코드를 직접 입력하고 입장하시면, 해당 코드로 <strong>우리 학교/학급만의 독립된 공간</strong>이 즉시 생성됩니다!</p>
+    </div>
+  </div>
+</div>
+
 <div class="scr" id="s-mode">
   <div class="card" style="padding: 30px 24px;">
     <div class="msel">
@@ -547,13 +555,12 @@ async function fetchFirebaseData() {
       </div>
     </div>
     <div style="text-align: center; padding-top: 20px; border-top: 1px solid rgba(0,0,0,0.08); display:flex; justify-content:center; gap:16px;">
-      <button class="btn bs" onclick="location.href=location.pathname" style="font-size: 13px; padding: 10px 20px; color: var(--text); border-color: rgba(0,0,0,0.1);">🔄 학교 코드 변경</button>
+      <button class="btn bs" onclick="changeSchool()" style="font-size: 13px; padding: 10px 20px; color: var(--text); border-color: rgba(0,0,0,0.1);">🔄 학교 코드 변경</button>
       <button class="btn bs" onclick="goto('s-login')" style="font-size: 13px; padding: 10px 20px; color: var(--muted); border-color: rgba(0,0,0,0.1);">🔧 교사 모드 (설정)</button>
     </div>
   </div>
 </div>
 
-<!-- ② 교사 로그인 -->
 <div class="scr" id="s-login">
   <div class="card tc">
     <div class="ct t">교사 인증</div>
@@ -569,7 +576,6 @@ async function fetchFirebaseData() {
   </div>
 </div>
 
-<!-- ③ 교사 설정 (메인) -->
 <div class="scr" id="s-teacher">
   <div class="card tc">
     <div class="ct t">학생 데이터 관리</div>
@@ -643,7 +649,6 @@ async function fetchFirebaseData() {
     </div>
   </div>
   
-  <!-- 랭킹 데이터 관리 -->
   <div class="card danger">
     <div class="ct danger">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
@@ -659,26 +664,22 @@ async function fetchFirebaseData() {
         </select>
       </div>
     </div>
-    
     <div class="fg" id="del-grade-wrap" style="display:none;">
       <label>삭제할 학년 (숫자 입력)</label>
       <input type="number" id="del-grade" placeholder="예: 3" min="1" max="6"/>
     </div>
-    
     <div class="fg" id="del-lesson-wrap" style="display:none;">
       <label>삭제할 단원 선택</label>
       <div class="select-wrap">
         <select id="del-lesson-select"></select>
       </div>
     </div>
-
     <div class="br" style="margin-top:24px;">
       <button class="btn bs" onclick="executeDeleteRanking()" style="width:100%; background:rgba(225,29,72,0.05); color:var(--accent2); border-color:rgba(225,29,72,0.3); box-shadow:0 4px 12px rgba(225,29,72,0.05);">🗑️ 선택한 랭킹 데이터 영구 삭제</button>
     </div>
   </div>
 </div>
 
-<!-- ⑨ 교사용 기록표 화면 -->
 <div class="scr" id="s-teacher-records" style="max-width:1200px; width:100%;">
   <div class="card" style="padding: 30px;">
     <div style="text-align:center; margin-bottom: 30px;">
@@ -686,7 +687,6 @@ async function fetchFirebaseData() {
       <p style="color: var(--muted); font-size: 15px;">필터링된 데이터를 삭제하거나 CSV로 다운로드할 수 있습니다.</p>
     </div>
 
-    <!-- 컨트롤 영역 -->
     <div class="top-bar-controls">
       <div class="filters">
         <div class="fg" style="margin:0;">
@@ -722,7 +722,6 @@ async function fetchFirebaseData() {
 
     <button class="btn bs" onclick="goto('s-teacher')" style="margin-bottom: 20px; padding: 10px 20px; font-size: 14px;">← 설정으로 돌아가기</button>
 
-    <!-- 테이블 영역 -->
     <div class="rank-table-wrap">
       <table class="rank-table" id="teacher-record-table">
         <thead>
@@ -744,7 +743,6 @@ async function fetchFirebaseData() {
   </div>
 </div>
 
-<!-- ④ 학생 단원 선택 -->
 <div class="scr" id="s-lesson">
   <div id="bnr-warn" class="bnr warn" style="display:none">⚠️ 등록된 단원이 없습니다. 교사가 설정을 저장해야 합니다.</div>
   <div class="card">
@@ -757,7 +755,6 @@ async function fetchFirebaseData() {
   </div>
 </div>
 
-<!-- ⑤ 학생 정보 입력 -->
 <div class="scr" id="s-player">
   <div class="bnr ok" style="margin-bottom:24px; border-radius:20px; background:#ffffff; box-shadow:0 8px 24px rgba(16,185,129,0.08);">
     🎯 선택 단원: <strong id="sel-lesson-lbl" style="font-family:var(--mono); margin-left:10px; font-size: 20px; font-weight:800;"></strong>
@@ -819,7 +816,6 @@ async function fetchFirebaseData() {
   </div>
 </div>
 
-<!-- ⑥ 문장 게임 화면 -->
 <div class="scr" id="s-game">
   <div class="prog-bg"><div class="prog-fill" id="prog" style="width:0%"></div></div>
   <div class="sbar">
@@ -841,14 +837,12 @@ async function fetchFirebaseData() {
   </div>
 </div>
 
-<!-- ⑦ 팬시 결과 대시보드 화면 -->
 <div class="scr" id="s-result">
   <div class="result-dashboard">
     <div class="score-hero">
       <div class="score-label">총 획득 포인트 (TOTAL POINTS)</div>
       <div class="score-number" id="r-total-points">0</div>
       
-      <!-- 신기록 달성 배너 -->
       <div id="pb-banner" class="pb-banner" style="display:none;">🎉 신기록 달성! (이전 기록 +<span id="pb-diff"></span>점 향상)</div>
       
       <div class="points-breakdown">
@@ -870,7 +864,6 @@ async function fetchFirebaseData() {
 
   <div class="card">
     <div class="ct">문장별 상세 결과</div>
-    <!-- 학생이 자신의 오답/정답 상세 내역을 볼 수 있는 영역 -->
     <div class="wrl" id="wrl"></div>
   </div>
 
@@ -881,7 +874,6 @@ async function fetchFirebaseData() {
   </div>
 </div>
 
-<!-- ⑧ 순위 -->
 <div class="scr" id="s-ranking">
   <div class="card">
     <div class="ct" style="margin-bottom:24px">랭킹 보드</div>
@@ -928,7 +920,6 @@ async function fetchFirebaseData() {
       </div>
     </div>
 
-    <!-- 팬시한 내 순위 뱃지 (개인전용) -->
     <div id="my-rank-badge" style="display:none">
       <div class="my-rank-fancy">
         <div class="my-rank-icon">🏆</div>
@@ -945,7 +936,6 @@ async function fetchFirebaseData() {
       </div>
     </div>
     
-    <!-- 팀전 설명 텍스트 -->
     <div id="team-info-text" style="display:none; text-align:center; color:var(--muted); font-weight:700; margin-bottom:24px; padding:16px; background:rgba(245,158,11,0.05); border-radius:16px; border:1px solid rgba(245,158,11,0.2);">
       💡 학급의 모든 학생이 획득한 포인트가 합산됩니다. 1점이라도 팀에 기여해보세요!
     </div>
@@ -1266,7 +1256,6 @@ function renderTeacherRecords() {
   tbody.innerHTML = rows.map(r => {
     const acc = safeNum(r.accuracy);
     const accClass = acc >= 80 ? 'badge-success' : 'badge-danger';
-    // 신버전 호환성을 위해 totalPoints 사용, 없으면 기존 score
     const finalPoints = safeNum(r.points) || safeNum(r.score) || (safeNum(r.cpm) * (r.diff || 1));
     return `
       <tr>

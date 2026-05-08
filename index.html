@@ -187,7 +187,7 @@ textarea{min-height:180px;resize:vertical;font-family:var(--mono);font-size:15px
 .qcnt{font-family:var(--mono);font-size:18px;color:var(--accent3);letter-spacing:2px;margin-bottom:16px; font-weight:800;}
 .qmean{font-size:36px;font-weight:800;color:var(--text);margin-bottom:24px;line-height:1.4; text-shadow:0 4px 12px rgba(0,0,0,0.05);}
 
-/* SENTENCE DISPLAY (문장 하이라이트 & 블라인드) */
+/* SENTENCE DISPLAY */
 .sentence-display {
   font-family: var(--mono); font-size: 32px; font-weight: 800; color: var(--muted);
   background: rgba(0,0,0,0.03); padding: 24px 32px; border-radius: 20px; border: 1px solid rgba(0,0,0,0.05);
@@ -1508,22 +1508,23 @@ document.getElementById('tinput').addEventListener('input', function() {
   updateSentenceDisplay(this.value);
   const target = queue[current].sentence;
   
-  const elapsedMin = (Date.now() - qStart) / 60000;
+  // 0초 나눗셈 방지 안전장치
+  const elapsedSecRaw = (Date.now() - qStart) / 1000;
+  const elapsedMin = Math.max(0.01, elapsedSecRaw / 60); 
+  
   let correctCount = 0;
   for(let i=0; i<this.value.length; i++) { if(this.value[i] === target[i]) correctCount++; }
   
-  if(elapsedMin > 0) {
-    const cpm = Math.round(correctCount / elapsedMin);
-    const score = cpm * player.diff; 
-    document.getElementById('sv-score').textContent = score > 0 ? score : 0;
-  }
+  const cpm = Math.round(correctCount / elapsedMin);
+  const score = cpm * player.diff; 
+  document.getElementById('sv-score').textContent = score > 0 ? score : 0;
 
   // 문장 완성
   if(this.value === target) {
     isProcessing = true; 
     this.disabled = true; this.className = 'tinput cor';
     clearInterval(timer);
-    const elapsedSec = (Date.now() - qStart) / 1000;
+    const elapsedSec = Math.max(0.1, (Date.now() - qStart) / 1000); // Infinity 방지
     const finalCpm = Math.round(target.length / (elapsedSec / 60));
     const finalScore = finalCpm * player.diff;
     typedChars += target.length; 
@@ -1538,10 +1539,11 @@ function skipSentence(){
   isProcessing = true;
   clearInterval(timer);
   
-  const target = queue[current].sentence;
-  const typedInput = document.getElementById('tinput').value; 
+  const target = queue[current].sentence || '';
+  const typedInput = document.getElementById('tinput').value || ''; 
+  const elapsedSec = Math.max(0.1, (Date.now()-qStart)/1000);
   
-  results.push({sentence: target, meaning: queue[current].meaning, correct: false, cpm: 0, score: 0, time: (Date.now()-qStart)/1000, typed: typedInput});
+  results.push({sentence: target, meaning: queue[current].meaning || '', correct: false, cpm: 0, score: 0, time: elapsedSec, typed: typedInput});
   
   const inp = document.getElementById('tinput');
   inp.className = 'tinput wrg'; 
@@ -1561,95 +1563,95 @@ function startTimer(){
 // ── 게임 종료 및 보상 전략 계산 ──
 async function endGame(){
   clearInterval(timer);
-  const totalSec = (Date.now() - totalStart) / 1000;
-  const cc = results.filter(r=>r.correct).length;
-  const avgCpm = totalSec > 0 ? Math.round(typedChars / (totalSec / 60)) : 0;
-  
-  // 🎯 참여 보상 vs 결과 보상 분리 및 성장 보너스 계산
-  const baseParticipationPoints = 50; // 완주 기본 보상
-  const skillPoints = avgCpm * player.diff; // 실력(속도x난이도) 점수
-  
-  // 현재 스코어 기준 계산 (기본+실력)
-  const tempTotal = baseParticipationPoints + skillPoints;
-  
-  // PB(Personal Best) 갱신 확인
-  let growthBonus = 0;
-  let isPB = false;
-  let improvement = 0;
-  
-  if (myPreviousBest > 0 && tempTotal > myPreviousBest) {
-    isPB = true;
-    improvement = tempTotal - myPreviousBest;
-    growthBonus = 50; // 최고기록 갱신 보너스 50점 부여!
-  } else if (myPreviousBest === 0) {
-    // 첫 플레이도 PB로 인정하여 기본 보너스 부여
-    isPB = true;
-    improvement = tempTotal;
-    growthBonus = 50;
-  }
-  
-  const finalTotalPoints = tempTotal + growthBonus;
-  const accuracy = Math.round((cc / queue.length) * 100) || 0;
-  
-  lastScore = { grade: player.grade, class: player.class, number: player.number, name: player.name, lesson: selLesson, points: finalTotalPoints, cpm: avgCpm };
 
-  // 결과 화면 UI 업데이트
-  document.getElementById('r-total-points').textContent = finalTotalPoints;
-  document.getElementById('pt-base').textContent = `+${baseParticipationPoints}`;
-  document.getElementById('pt-skill').textContent = `+${skillPoints}`;
-  document.getElementById('pt-growth').textContent = `+${growthBonus}`;
-  
-  const pbBanner = document.getElementById('pb-banner');
-  if(isPB && myPreviousBest > 0) {
-    pbBanner.style.display = 'inline-block';
-    document.getElementById('pb-diff').textContent = improvement;
-  } else {
-    pbBanner.style.display = 'none';
-  }
-
-  document.getElementById('r-cpm').textContent = avgCpm;
-  document.getElementById('r-correct').textContent = cc;
-  document.getElementById('r-acc').textContent = accuracy + '%';
-  document.getElementById('r-total').textContent = totalSec.toFixed(1) + 's';
-  
-  const diffNames = ['🌱 초급', '🌿 중급', '🔥 고급'];
-  document.getElementById('runit').textContent = (selLesson.name ? `${selLesson.code} — ${selLesson.name}` : selLesson.code) + ` / ${diffNames[player.diff-1]}`;
-  
-  // 학생 결과 화면(wrl)에 입력 텍스트와 하이라이트 반영
-  document.getElementById('wrl').innerHTML = results.map((r,i)=> {
-    let typedHtml = '';
-    const target = r.sentence;
-    const typed = r.typed || '';
-    
-    for(let j=0; j<Math.max(target.length, typed.length); j++) {
-      if (j < typed.length) {
-        if(typed[j] === target[j]) {
-          typedHtml += `<span class="ok">${typed[j]}</span>`;
-        } else {
-          typedHtml += `<span class="ng">${typed[j] === ' ' ? '_' : typed[j]}</span>`;
-        }
-      }
-    }
-
-    return `
-    <div class="wrr ${r.correct?'ok':'ng'}">
-      <div class="detail-status ${r.correct?'ok':'ng'}" style="width:32px; text-align:center; font-size:18px;">${i+1}</div>
-      <div class="wrr-icon">${r.correct?'✓':'✗'}</div>
-      <div class="wrr-content" style="text-align:left;">
-        <div class="detail-target" style="font-size:16px; margin-bottom:4px; font-weight:700; color:var(--muted);">정답: ${r.sentence}</div>
-        <div class="detail-typed" style="font-size:22px; margin-bottom:4px;">입력: ${typedHtml || '<span style="font-size:15px; font-style:italic; color:var(--muted); font-weight:normal;">입력 기록 없음</span>'}</div>
-        <div class="wm" style="font-size:14px; color:var(--muted);">${r.meaning}</div>
-      </div>
-      <div class="wt">${r.correct ? r.score+' 점' : '0 점'}</div>
-    </div>`;
-  }).join('');
-
+  // 🚨 어떤 오류가 나더라도 무조건 결과 화면으로 즉시 전환
+  goto('s-result');
   document.getElementById('prog').style.width = '100%';
   const el = document.getElementById('ss-wrap');
   el.innerHTML='<div class="ss" style="text-align:center;">⏳ Firebase 랭킹 서버에 점수 기록 중...</div>';
-  goto('s-result');
 
   try {
+    const totalSec = Math.max(0.1, (Date.now() - totalStart) / 1000); // 0초 에러(Infinity) 완벽 방지
+    const cc = results.filter(r=>r.correct).length;
+    const avgCpm = Math.round(typedChars / (totalSec / 60)) || 0;
+    
+    // 🎯 참여 보상 vs 결과 보상 분리 및 성장 보너스 계산
+    const baseParticipationPoints = 50; 
+    const skillPoints = avgCpm * player.diff; 
+    
+    const tempTotal = baseParticipationPoints + skillPoints;
+    
+    let growthBonus = 0;
+    let isPB = false;
+    let improvement = 0;
+    
+    if (myPreviousBest > 0 && tempTotal > myPreviousBest) {
+      isPB = true;
+      improvement = tempTotal - myPreviousBest;
+      growthBonus = 50; 
+    } else if (myPreviousBest === 0) {
+      isPB = true;
+      improvement = tempTotal;
+      growthBonus = 50;
+    }
+    
+    const finalTotalPoints = tempTotal + growthBonus;
+    const accuracy = Math.round((cc / queue.length) * 100) || 0;
+    
+    lastScore = { grade: player.grade, class: player.class, number: player.number, name: player.name, lesson: selLesson, points: finalTotalPoints, cpm: avgCpm };
+
+    // 결과 화면 UI 업데이트
+    document.getElementById('r-total-points').textContent = finalTotalPoints;
+    document.getElementById('pt-base').textContent = `+${baseParticipationPoints}`;
+    document.getElementById('pt-skill').textContent = `+${skillPoints}`;
+    document.getElementById('pt-growth').textContent = `+${growthBonus}`;
+    
+    const pbBanner = document.getElementById('pb-banner');
+    if(isPB && myPreviousBest > 0) {
+      pbBanner.style.display = 'inline-block';
+      document.getElementById('pb-diff').textContent = improvement;
+    } else {
+      pbBanner.style.display = 'none';
+    }
+
+    document.getElementById('r-cpm').textContent = avgCpm;
+    document.getElementById('r-correct').textContent = cc;
+    document.getElementById('r-acc').textContent = accuracy + '%';
+    document.getElementById('r-total').textContent = totalSec.toFixed(1) + 's';
+    
+    const diffNames = ['🌱 초급', '🌿 중급', '🔥 고급'];
+    document.getElementById('runit').textContent = (selLesson.name ? `${selLesson.code} — ${selLesson.name}` : selLesson.code) + ` / ${diffNames[player.diff-1]}`;
+    
+    // 학생 결과 화면(wrl)에 입력 텍스트와 하이라이트 반영
+    document.getElementById('wrl').innerHTML = results.map((r,i)=> {
+      let typedHtml = '';
+      const target = r.sentence || '';
+      const typed = r.typed || '';
+      
+      for(let j=0; j<Math.max(target.length, typed.length); j++) {
+        if (j < typed.length) {
+          if(typed[j] === target[j]) {
+            typedHtml += `<span class="ok">${typed[j]}</span>`;
+          } else {
+            typedHtml += `<span class="ng">${typed[j] === ' ' ? '_' : typed[j]}</span>`;
+          }
+        }
+      }
+
+      return `
+      <div class="wrr ${r.correct?'ok':'ng'}">
+        <div class="detail-status ${r.correct?'ok':'ng'}" style="width:32px; text-align:center; font-size:18px;">${i+1}</div>
+        <div class="wrr-icon">${r.correct?'✓':'✗'}</div>
+        <div class="wrr-content" style="text-align:left;">
+          <div class="detail-target" style="font-size:16px; margin-bottom:4px; font-weight:700; color:var(--muted);">정답: ${target}</div>
+          <div class="detail-typed" style="font-size:22px; margin-bottom:4px;">입력: ${typedHtml || '<span style="font-size:15px; font-style:italic; color:var(--muted); font-weight:normal;">입력 기록 없음</span>'}</div>
+          <div class="wm" style="font-size:14px; color:var(--muted);">${r.meaning}</div>
+        </div>
+        <div class="wt">${r.correct ? r.score+' 점' : '0 점'}</div>
+      </div>`;
+    }).join('');
+
+    // Firebase 랭킹 저장 시도
     if(!checkCanvasAuthRule()) throw new Error("인증 권한이 없습니다.");
     const detailData = results.map(r => ({ sentence: r.sentence, typed: r.typed, correct: r.correct }));
 
@@ -1663,7 +1665,8 @@ async function endGame(){
     });
     el.innerHTML='<div class="ss ok" style="text-align:center;">✓ Firebase 서버 랭킹 등록 완료! 팀에 기여했습니다!</div>';
   } catch(e) {
-    el.innerHTML=`<div class="ss err" style="text-align:center;">✗ 랭킹 저장 실패: Firebase 설정(규칙)을 확인해주세요.</div>`;
+    el.innerHTML=`<div class="ss err" style="text-align:center;">✗ 랭킹 저장 실패 (인증 또는 설정 확인 필요)</div>`;
+    console.error("End Game Error:", e);
   }
 }
 
